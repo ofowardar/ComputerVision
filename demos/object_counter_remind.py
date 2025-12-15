@@ -34,7 +34,7 @@ while True:
             cv2.rectangle(
                 frame,
                 (x1,y1),
-                (x2,y2)
+                (x2,y2),
                 (0,255,0),
                 2
             )
@@ -48,3 +48,22 @@ while True:
                 (255,0,0),
                 1
             )
+
+    cv2.putText(
+        frame,
+        f"Total Objects: {object_counter}",
+        (10,30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0,0,255),
+        2
+    )
+
+
+    cv2.imshow("Object Counter",frame)
+
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+    
+capture.release()
+cv2.destroyAllWindows()
