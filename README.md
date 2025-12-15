@@ -373,3 +373,103 @@ Bu kodla öğrendiklerimiz:
 - ✅ Nesneleri tanımlama ve sınıflandırma
 - ✅ Gerçek zamanlı işleme mantığını
 - ✅ OpenCV temel fonksiyonlarını
+
+---
+
+## **Demos: `people_count_video.py`**
+
+Bu bölüm `demos/people_count_video.py` dosyasının ders-notu hâlidir. Bu demo, bir video dosyasını okuyup yalnızca "person" (kişi) sınıfını sayar ve kısa süreli sürekli algılamalarda "PERSON DETECTED" uyarısı gösterir.
+
+### Nerede?
+- Dosya: `demos/people_count_video.py`
+- Video yolu değişkeni: `video_path = "C:/Users/Ömer Faruk/Desktop/ComputerVision/videos/video1.mp4"`
+
+---
+
+### Kodun Akışı (Özet)
+
+1. Model yüklenir: `model = YOLO("yolov8n.pt")`
+2. Video dosyası `cv2.VideoCapture(video_path)` ile açılır
+3. Her frame için `results = model(frame)` ile tahmin yapılır
+4. Sadece `label == "person"` olan tespitler sayılır
+5. Belirli art arda frame sayısı (ör. 3) boyunca kişi algılanırsa ekranda "PERSON DETECTED" gösterilir
+
+---
+
+### Önemli Kod Parçaları ve Açıklamaları
+
+1) Video açma ve kontrol
+
+```python
+video_path = ".../videos/video1.mp4"
+cap = cv2.VideoCapture(video_path)
+if not cap.isOpened():
+    print("Error: Could not open video.")
+    exit()
+```
+
+- Video dosyası açılamazsa program düzgün şekilde durur.
+
+2) Model ile tahmin ve sadece kişi sayma
+
+```python
+results = model(frame, verbose=False)
+person_count = 0
+for r in results:
+    for box in r.boxes:
+        cls_id = int(box.cls[0])
+        label = model.names[cls_id]
+        if label == "person":
+            person_count += 1
+            x1,y1,x2,y2 = map(int, box.xyxy[0])
+            conf = box.conf[0]
+            # Kutu ve etiket çizimi burada yapılır
+```
+
+- `label == "person"` kontrolü sayesinde yalnızca insanları sayıyoruz. Bu demo, çok sınıflı sayım yerine tek sınıfa odaklanmanın örneğidir.
+
+3) Süreklilik kontrolü (kısa stabil algılamalar için)
+
+```python
+if person_count > 0:
+    person_frame_counter += 1
+else:
+    person_frame_counter = 0
+
+if person_frame_counter >= 3:
+    # ekranda PERSON DETECTED yaz
+```
+
+- `person_frame_counter` değişkeni, kişinin birkaç arka arkaya frame içinde gözüküp gözükmediğini takip eder. Böylece tek karelik yanlış alarmlar azaltılır.
+
+4) Görsel çıktı
+
+```python
+cv2.rectangle(frame, (x1,y1), (x2,y2), (0,255,0), 2)
+cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+cv2.putText(frame, f"Person Count: {person_count}", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+```
+
+- Bounding box ve metinlerle hem tekil tespit hem de toplam kişi sayısı gösterilir.
+
+---
+
+### İpuçları / Öğrenme Noktaları
+
+- Video dosyası ile çalışırken `VideoCapture(0)` yerine dosya yolunu kullanıyoruz; bu, canlı kamera yerine ön kayıtlı videolarla deney yapmak için yararlıdır.
+- `person_frame_counter` gibi süreklilik kontrolleri gerçek dünyada yalancı pozitifleri (false positives) azaltır.
+- `model(frame, verbose=False)` şeklinde çalıştırmak çıktıyı sessizleştirmeye yardımcı olur.
+- Farklı video çözünürlüklerinde hız/donanım dengesine dikkat edin; `yolov8n` küçük ve hızlı bir modeldir.
+
+---
+
+### Hızlı Değişiklik Örneği
+
+Eğer başka bir video kullanmak isterseniz, sadece `video_path` değerini değiştirin:
+
+```python
+video_path = "C:/yeni_klasor/my_video.mp4"
+cap = cv2.VideoCapture(video_path)
+```
+
+Bu bölüm `people_count_video.py` dosyasının eğitim amaçlı, ders-notu biçimindeki özetidir. Dosyada görünmesini istediğin ekstra açıklamalar veya belirli satırların ayrıntılı açıklamasını istersen, belirt yeterli — ekleyeyim.
